@@ -2009,6 +2009,7 @@ let S = {
   currentDim: 0,
   answers: {}  // answers[dimId][persona|'base'][qi] = optionIndex
 };
+let REPORT_FROM_LINK = false;   // true when report is opened via shared/email link
 DKEYS.forEach(k=>{ S.answers[k]={}; });
 
 // ══════════════════════════════════════════════
@@ -2441,13 +2442,14 @@ function generateReport(){
       <p class="impact-t">Most treasury architectures were designed for Regime 01 — daily operations. The organisations that lead in the next decade will be those whose treasury functions operate across all six dimensions: from strategic priorities to ecosystem scale. The gap between where you are and where you need to be is not just a technology question — it is an architecture question.<br><br><strong style="color:var(--white)">Most treasury architectures were designed for Regime 01. Only ION is built for all six.</strong></p>
     </div>
     <div class="cta-box">
-      <div class="cta-h">Save & Share Your Results</div>
-      <p class="cta-d">Submit your assessment results securely to our team, or download the full report with dimension scores, findings and recommendations as a PDF.</p>
+      <div class="cta-h">${REPORT_FROM_LINK ? 'Your Results' : 'Save & Share Your Results'}</div>
+      <p class="cta-d">${REPORT_FROM_LINK ? 'Download the full report with dimension scores, findings and recommendations as a PDF.' : 'Submit your assessment results securely to our team, or download the full report with dimension scores, findings and recommendations as a PDF.'}</p>
+      ${REPORT_FROM_LINK ? '' : `
       <button class="btn-cta" id="submit-btn" onclick="submitResults()" style="margin-bottom:12px">
         Save Results
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
-      <br>
+      <br>`}
       <button class="btn-outline" onclick="downloadReport()">
         Download Report as PDF
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
@@ -2616,6 +2618,7 @@ window.addEventListener('DOMContentLoaded', function() {
           }
         });
       }
+      REPORT_FROM_LINK = true;
       generateReport();
     } catch(e) {
       console.error('Could not restore report from URL:', e);
