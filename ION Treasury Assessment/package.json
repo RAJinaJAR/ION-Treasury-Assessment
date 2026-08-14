@@ -1,9 +1,0 @@
-{
-  "name": "ion-treasury-assessment",
-  "version": "1.0.0",
-  "private": true,
-  "description": "ION Treasury Strategic Assessment Tool",
-  "scripts": {
-    "dev": "vercel dev"
-  }
-}
