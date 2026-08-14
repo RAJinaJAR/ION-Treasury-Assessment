@@ -294,6 +294,25 @@ h1 em{font-style:italic;color:var(--gold)}
   .dcard-hdr .score-bar-wrap{grid-area:bar}
   .dcard-hdr .rag{grid-area:rag}
   .dcard-hdr .chev{display:none}
+
+  /* ── SETUP SCREEN: stack the 2-col form + 4-col model grid so nothing is clipped ── */
+  #s-setup .inner{padding:32px 18px 64px}
+  .sh{font-size:22px;line-height:1.2}
+  .frow{grid-template-columns:1fr;gap:14px;margin-bottom:22px}
+  .frow .fg:empty{display:none}
+  .mgrid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px}
+  .mc{padding:14px}
+
+  /* ── LANDING SCREEN: fit hero + tags on small screens ── */
+  .land-body{padding:44px 20px}
+  h1{font-size:30px}
+  .lead{font-size:14px}
+  .dtags{gap:6px}
+}
+
+/* ── Very small phones: single-column model cards ── */
+@media(max-width:460px){
+  .mgrid{grid-template-columns:1fr}
 }
 
 /* ── Global: never allow horizontal scroll / broken zoom on small screens ── */
