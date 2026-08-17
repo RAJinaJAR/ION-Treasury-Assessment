@@ -1,14 +1,16 @@
 // ─────────────────────────────────────────────────────────────
 // Cloudflare Pages Function
 // File path in your repo MUST be:  functions/api/submit.js
-//   → this automatically serves the route  POST /api/submit
-//   (so your frontend fetch('/api/submit') needs NO changes)
+//   → serves POST /api/submit  (frontend fetch('/api/submit') unchanged)
 //
-// Updated for the SHORTENED assessment: 5 regimes (was 6 dimensions).
-// Payload keys are now reg01..reg05 + overall + overallUnweighted.
+// Handles BOTH request types from the frontend:
+//   requestType = 'assessment'  → normal "results saved" submission
+//   requestType = 'meeting'     → "Speak with an ION Treasury Specialist"
+// The requestType is surfaced on the Teams card AND kept in the raw
+// payload so Power Automate can branch (Condition on requestType).
 //
-// Set the secret in: Cloudflare Dashboard → your Pages project →
-//   Settings → Environment variables → add TEAMS_WEBHOOK_URL
+// Secret: Cloudflare → Pages project → Settings → Environment variables
+//         → add TEAMS_WEBHOOK_URL
 // ─────────────────────────────────────────────────────────────
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -16,12 +18,10 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// Handle CORS preflight (OPTIONS)
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: CORS });
 }
 
-// Handle the actual submission (POST)
 export async function onRequestPost(context) {
   const { request, env } = context;
   const jsonHeaders = { ...CORS, 'Content-Type': 'application/json' };
@@ -38,18 +38,17 @@ export async function onRequestPost(context) {
   try {
     const d = await request.json();
 
-    // Build RAG emoji
+    // Default to 'assessment' so older payloads without the field still work.
+    const requestType = d.requestType || 'assessment';
+    const isMeeting = requestType === 'meeting';
+
     const ragEmoji = d.rag === 'Red' ? '🔴' : d.rag === 'Amber' ? '🟡' : '🟢';
 
-    // Build answer details if available
-    let answerDetails = '';
-    if (d.answers && Array.isArray(d.answers)) {
-      answerDetails = d.answers
-        .map((a) => `[${a.regime}] ${a.scenario}: ${a.selectedOption} (${a.score}/4)`)
-        .join('\n');
-    }
+    // Title makes it obvious in the Teams channel which kind of request this is.
+    const titleText = isMeeting
+      ? `📅 Meeting Request: ${d.company || 'Unknown'}`
+      : `📊 New Assessment: ${d.company || 'Unknown'}`;
 
-    // Format as Adaptive Card for clean Teams channel rendering
     const card = {
       type: 'message',
       text: JSON.stringify(d),
@@ -63,10 +62,17 @@ export async function onRequestPost(context) {
             body: [
               {
                 type: 'TextBlock',
-                text: `📊 New Assessment: ${d.company || 'Unknown'}`,
+                text: titleText,
                 weight: 'Bolder',
                 size: 'Medium',
                 wrap: true,
+              },
+              {
+                type: 'TextBlock',
+                text: `Request type: ${requestType.toUpperCase()}`,
+                weight: 'Bolder',
+                color: isMeeting ? 'Accent' : 'Default',
+                spacing: 'None',
               },
               {
                 type: 'TextBlock',
@@ -126,7 +132,7 @@ export async function onRequestPost(context) {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, message: 'Assessment submitted successfully' }),
+      JSON.stringify({ ok: true, message: 'Submitted successfully', requestType }),
       { status: 200, headers: jsonHeaders }
     );
   } catch (err) {
