@@ -4,10 +4,12 @@
 //   → this automatically serves the route  POST /api/submit
 //   (so your frontend fetch('/api/submit') needs NO changes)
 //
+// Updated for the SHORTENED assessment: 5 regimes (was 6 dimensions).
+// Payload keys are now reg01..reg05 + overall + overallUnweighted.
+//
 // Set the secret in: Cloudflare Dashboard → your Pages project →
 //   Settings → Environment variables → add TEAMS_WEBHOOK_URL
 // ─────────────────────────────────────────────────────────────
-
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST,OPTIONS',
@@ -23,8 +25,8 @@ export async function onRequestOptions() {
 export async function onRequestPost(context) {
   const { request, env } = context;
   const jsonHeaders = { ...CORS, 'Content-Type': 'application/json' };
-
   const WEBHOOK_URL = env.TEAMS_WEBHOOK_URL;
+
   if (!WEBHOOK_URL) {
     console.error('TEAMS_WEBHOOK_URL not set');
     return new Response(
@@ -43,7 +45,7 @@ export async function onRequestPost(context) {
     let answerDetails = '';
     if (d.answers && Array.isArray(d.answers)) {
       answerDetails = d.answers
-        .map((a) => `[${a.dimension}] Q${a.questionIndex + 1}: ${a.selectedOption}`)
+        .map((a) => `[${a.regime}] ${a.scenario}: ${a.selectedOption} (${a.score}/4)`)
         .join('\n');
     }
 
@@ -68,25 +70,24 @@ export async function onRequestPost(context) {
               },
               {
                 type: 'TextBlock',
-                text: `${d.name || 'Anonymous'} · ${d.contact || 'no contact'} · ${d.role || 'N/A'} · ${d.model || 'N/A'} · ${d.persona || 'N/A'}`,
+                text: `${d.name || 'Anonymous'} · ${d.contact || 'no contact'} · ${d.role || 'N/A'} · ${d.model || 'N/A'}${d.entities ? ' · ' + d.entities + ' entities' : ''}`,
                 isSubtle: true,
                 wrap: true,
               },
               {
                 type: 'TextBlock',
-                text: `${ragEmoji} Overall Score: ${d.overall}% (${d.rag})`,
+                text: `${ragEmoji} Overall Score: ${d.overall}% (${d.rag})${d.overallUnweighted != null ? ` · Unweighted ${d.overallUnweighted}%` : ''}`,
                 weight: 'Bolder',
                 color: d.rag === 'Red' ? 'Attention' : d.rag === 'Amber' ? 'Warning' : 'Good',
               },
               {
                 type: 'FactSet',
                 facts: [
-                  { title: 'Dim 00 - Strategic Priorities', value: `${d.dim00}%` },
-                  { title: 'Dim 01 - Daily Operations', value: `${d.dim01}%` },
-                  { title: 'Dim 02 - Structural Volatility', value: `${d.dim02}%` },
-                  { title: 'Dim 03 - Shock Events', value: `${d.dim03}%` },
-                  { title: 'Dim 04 - Strategic Capital', value: `${d.dim04}%` },
-                  { title: 'Dim 05 - Ecosystem Scale', value: `${d.dim05}%` },
+                  { title: 'Regime 01 - Daily Operations', value: `${d.reg01}%` },
+                  { title: 'Regime 02 - Market Volatility', value: `${d.reg02}%` },
+                  { title: 'Regime 03 - Crisis Resilience', value: `${d.reg03}%` },
+                  { title: 'Regime 04 - Strategic Capital', value: `${d.reg04}%` },
+                  { title: 'Regime 05 - Group Scale', value: `${d.reg05}%` },
                 ],
               },
               {
