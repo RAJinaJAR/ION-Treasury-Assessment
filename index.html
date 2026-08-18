@@ -1146,7 +1146,7 @@ function generateReport(){
 
   const statHTML=`
     <div class="regime-card"><div class="rc-num" style="color:#0067b1">${pct}%</div><div class="rc-name">Weighted Maturity</div><div class="rc-label" style="margin-top:6px">Unweighted ${rawPct}%</div></div>
-    <div class="regime-card"><div class="rc-name" style="color:${REGIMES[RKEYS.indexOf(strongest)].color};font-size:14px;margin-bottom:4px">${REGIMES[RKEYS.indexOf(strongest)].name}</div><div class="rc-label">Strongest Regime</div></div>
+    <div class="regime-card">${allEqual?`<div class="rc-name" style="color:var(--muted);font-size:14px;margin-bottom:4px">None</div>`:`<div class="rc-name" style="color:${REGIMES[strongestIdx].color};font-size:14px;margin-bottom:4px">${REGIMES[strongestIdx].name}</div>`}<div class="rc-label">Strongest Regime</div></div>
     <div class="regime-card">${hasFocus?`<div class="rc-name" style="color:${REGIMES[weakestIdx].color};font-size:14px;margin-bottom:4px">${REGIMES[weakestIdx].name}</div>`:`<div class="rc-name" style="color:var(--muted);font-size:14px;margin-bottom:4px">None</div>`}<div class="rc-label">Priority Focus Area</div></div>
     <div class="regime-card"><div class="rc-num" style="color:#0067b1">${gapsAll.length}</div><div class="rc-name">Capability Gaps</div><div class="rc-label" style="margin-top:6px">${Math.min(gapsAll.length,6)} shown below</div></div>`;
 
