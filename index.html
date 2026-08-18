@@ -567,7 +567,7 @@ h1 em { color:#4aa3e0; }
   <div class="inner">
     <div class="sl">Your context</div>
     <h2 class="sh">Tell us about your organisation</h2>
-    <p class="sd">Your operating model is the lens through which each regime is scored — ensuring your results reflect your structural reality rather than a generic average. You can switch operating model at any point during the assessment.</p>
+    <p class="sd">Your operating model is the lens through which we assess your treasury, ensuring your results reflect your operating reality rather than a generic average. Your assessment will measure readiness across five dimensions of modern treasury, from daily operations and market volatility to crisis resilience, strategic capital and group scale.</p>
     <div class="frow">
       <div class="fg"><label class="fl">Organisation Name *</label><input id="i-co" class="fi" type="text" placeholder="Legal or trading name"></div>
       <div class="fg"><label class="fl">Your Name</label><input id="i-nm" class="fi" type="text" placeholder="First and last name"></div>
@@ -1123,14 +1123,31 @@ function generateReport(){
   </svg>`;
 
   const strongest=RKEYS.reduce((a,k)=>scores[k].pct>scores[a].pct?k:a,RKEYS[0]);
-  const focusScores=RKEYS.map((k,i)=>scores[k].pct/m.w[i]);
-  const weakestIdx=focusScores.indexOf(Math.min(...focusScores));
+  const strongestIdx=RKEYS.indexOf(strongest);
   const gapsAll=identifyGaps();
+  // ── Priority Focus Area only makes sense when there are genuine capability
+  //    gaps AND the regimes are not all scored equally. If every regime is
+  //    equal (or there are zero gaps), we do NOT force a focus area — that is
+  //    what previously caused the "strongest regime = priority focus area"
+  //    clash and the "focus area but 0 gaps" contradiction. ──
+  const allEqual=RKEYS.every(k=>scores[k].pct===scores[RKEYS[0]].pct);
+  const focusScores=RKEYS.map((k,i)=>scores[k].pct/m.w[i]);
+  let weakestIdx=-1;
+  if(gapsAll.length>0 && !allEqual){
+    weakestIdx=focusScores.indexOf(Math.min(...focusScores));
+    // never let the priority focus area coincide with the strongest regime
+    if(weakestIdx===strongestIdx){
+      let alt=-1, altVal=Infinity;
+      focusScores.forEach((v,i)=>{ if(i!==strongestIdx && v<altVal){ altVal=v; alt=i; } });
+      if(alt!==-1) weakestIdx=alt;
+    }
+  }
+  const hasFocus=weakestIdx!==-1;
 
   const statHTML=`
     <div class="regime-card"><div class="rc-num" style="color:#0067b1">${pct}%</div><div class="rc-name">Weighted Maturity</div><div class="rc-label" style="margin-top:6px">Unweighted ${rawPct}%</div></div>
     <div class="regime-card"><div class="rc-name" style="color:${REGIMES[RKEYS.indexOf(strongest)].color};font-size:14px;margin-bottom:4px">${REGIMES[RKEYS.indexOf(strongest)].name}</div><div class="rc-label">Strongest Regime</div></div>
-    <div class="regime-card"><div class="rc-name" style="color:${REGIMES[weakestIdx].color};font-size:14px;margin-bottom:4px">${REGIMES[weakestIdx].name}</div><div class="rc-label">Priority Focus Area</div></div>
+    <div class="regime-card">${hasFocus?`<div class="rc-name" style="color:${REGIMES[weakestIdx].color};font-size:14px;margin-bottom:4px">${REGIMES[weakestIdx].name}</div>`:`<div class="rc-name" style="color:var(--muted);font-size:14px;margin-bottom:4px">None</div>`}<div class="rc-label">Priority Focus Area</div></div>
     <div class="regime-card"><div class="rc-num" style="color:#0067b1">${gapsAll.length}</div><div class="rc-name">Capability Gaps</div><div class="rc-label" style="margin-top:6px">${Math.min(gapsAll.length,6)} shown below</div></div>`;
 
   const dcards=REGIMES.map((dim,i)=>{
