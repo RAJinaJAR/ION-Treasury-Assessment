@@ -1125,22 +1125,32 @@ function generateReport(){
   const strongest=RKEYS.reduce((a,k)=>scores[k].pct>scores[a].pct?k:a,RKEYS[0]);
   const strongestIdx=RKEYS.indexOf(strongest);
   const gapsAll=identifyGaps();
-  // ── Priority Focus Area only makes sense when there are genuine capability
-  //    gaps AND the regimes are not all scored equally. If every regime is
-  //    equal (or there are zero gaps), we do NOT force a focus area — that is
-  //    what previously caused the "strongest regime = priority focus area"
-  //    clash and the "focus area but 0 gaps" contradiction. ──
+  // ── Priority Focus Area ──
+  //   Gaps determine the focus area WHEN gaps exist; the operating model
+  //   determines the focus area WHEN there are no capability gaps.
+  //   • If there are Priority Capability Gaps → name the Focus Area after the
+  //     regime the MAJORITY of those priority gaps fall into.
+  //   • If there are NO capability gaps → nothing to derive it from, so assign
+  //     the Focus Area from the Operating Model → Regime mapping below. ──
+  const MODEL_FOCUS={
+    enterprise:'scale',   // Enterprise Treasury            → Group Scale
+    midmarket:'ops',      // Mid-Market / Growing Business  → Daily Operations
+    capmarkets:'vol',     // Capital Markets & FI           → Market Volatility
+    publicsec:'shock',    // Central Banks & Public Sector  → Crisis Resilience
+    portfolio:'strat',    // PE / Funds Portfolio Treasury  → Strategic Capital
+    commodity:'vol',      // Commodity Trading              → Market Volatility
+    whitelabel:'scale',   // Bank / Institutional White-Label → Group Scale
+    other:'ops'           // Other                          → Daily Operations
+  };
   const allEqual=RKEYS.every(k=>scores[k].pct===scores[RKEYS[0]].pct);
-  const focusScores=RKEYS.map((k,i)=>scores[k].pct/m.w[i]);
   let weakestIdx=-1;
-  if(gapsAll.length>0 && !allEqual){
-    weakestIdx=focusScores.indexOf(Math.min(...focusScores));
-    // never let the priority focus area coincide with the strongest regime
-    if(weakestIdx===strongestIdx){
-      let alt=-1, altVal=Infinity;
-      focusScores.forEach((v,i)=>{ if(i!==strongestIdx && v<altVal){ altVal=v; alt=i; } });
-      if(alt!==-1) weakestIdx=alt;
-    }
+  if(gapsAll.length>0){
+    // regime where the majority of priority gaps fall
+    const gapCounts=RKEYS.map((_,i)=>gapsAll.filter(g=>g.regime===i).length);
+    weakestIdx=gapCounts.indexOf(Math.max(...gapCounts));
+  }else{
+    // no gaps to derive from → operating model default
+    weakestIdx=RKEYS.indexOf(MODEL_FOCUS[S.model]||'ops');
   }
   const hasFocus=weakestIdx!==-1;
 
